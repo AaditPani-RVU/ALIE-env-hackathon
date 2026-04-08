@@ -1,3 +1,12 @@
+---
+title: ALIE - Adaptive Learning Intervention Environment
+emoji: 🎓
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+---
+
 # Adaptive Learning Intervention Environment (ALIE)
 
 ALIE is a simulated OpenEnv environment where an AI teaching agent interacts with a synthetic student. The synthetic student maintains **hidden, non-deterministic internal state** (knowledge, confidence, fatigue, misconceptions), which evolve smoothly over time depending on the sequence of teaching interventions applied by the agent.
