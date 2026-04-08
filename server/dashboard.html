@@ -369,7 +369,8 @@
             }
         }
 
-        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const ws = new WebSocket(protocol + window.location.host + "/ws");
         
         ws.onopen = function() {
             document.getElementById('connectionStatus').classList.remove('disconnected');
@@ -388,7 +389,6 @@
                 cognitiveChart.data.labels = [];
                 cognitiveChart.data.datasets.forEach(ds => ds.data = []);
                 document.getElementById('stepBadge').innerText = "0";
-                return;
             }
 
             const state = data.state;
