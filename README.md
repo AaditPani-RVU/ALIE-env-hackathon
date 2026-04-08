@@ -1,12 +1,3 @@
----
-title: ALIE - Adaptive Learning Intervention Environment
-emoji: 🎓
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
----
-
 # Adaptive Learning Intervention Environment (ALIE)
 
 ALIE is a simulated OpenEnv environment where an AI teaching agent interacts with a synthetic student. The synthetic student maintains **hidden, non-deterministic internal state** (knowledge, confidence, fatigue, misconceptions), which evolve smoothly over time depending on the sequence of teaching interventions applied by the agent.
@@ -54,6 +45,14 @@ Or run via Python:
 ```bash
 pip install -r requirements.txt
 uvicorn server.app:app --host 0.0.0.0 --port 7860
+```
+
+## OpenEnv Validation
+This repository acts as an officially compliant OpenEnv simulation.
+To validate compliance with the OpenEnv specification locally:
+```bash
+pip install openenv
+openenv validate .
 ```
 
 ## Baseline Evaluation
