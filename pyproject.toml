@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alie-env"
+version = "1.0.0"
+description = "Adaptive Learning Intervention Environment (ALIE)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.104.1",
+    "uvicorn[standard]==0.24.0.post1",
+    "pydantic==2.5.2",
+    "openai>=1.0.0",
+    "httpx==0.25.2",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0"
+]
