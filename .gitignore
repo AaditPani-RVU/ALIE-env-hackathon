@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment variables (CRITICAL: Ignore .env files so keys don't leak)
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
+.venv/
+venv/
+VENV/
+
+# Note: We do NOT ignore 'env/' because our OpenEnv source code lives under the 'env/' folder!

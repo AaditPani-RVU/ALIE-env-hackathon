@@ -1,0 +1,48 @@
+env_name: ALIE
+version: 1.0.0
+description: "Adaptive Learning Intervention Environment (ALIE): A sequential decision-making system simulating a student learning session. The agent selects pedagogical actions to maximize student learning while managing fatigue, engagement, and confidence over time."
+
+action_schema:
+  type: object
+  properties:
+    action_type:
+      type: string
+      enum: ["ask_easy", "ask_medium", "ask_hard", "give_hint", "review_concept", "advance_topic"]
+      description: "The intervention tactic the agent deploys."
+    concept_id:
+      type: string
+      description: "Optional ID of the subject concept being targeted."
+
+observation_schema:
+  type: object
+  properties:
+    recent_answers:
+      type: array
+      items:
+        type: integer
+      description: "List of recent correctness results (1 for correct, 0 for incorrect)."
+    response_time:
+      type: number
+      description: "Simulated response time in seconds."
+    engagement_score:
+      type: number
+      description: "Current engagement level (0.0 to 1.0)."
+    current_difficulty:
+      type: string
+      enum: ["easy", "medium", "hard"]
+      description: "Difficulty of the most recent interaction."
+    recent_trend:
+      type: string
+      enum: ["improving", "declining", "unstable", "stable"]
+      description: "Trend of recent performance."
+    step_number:
+      type: integer
+      description: "Current step in the episode."
+
+tasks:
+  - name: easy
+    description: "Student with high initial engagement and predictable learning capability."
+  - name: medium
+    description: "Average student with occasional confusion and lower resilience."
+  - name: hard
+    description: "Student with severe misconceptions, high fatigue potential, and nonlinear learning curves."
