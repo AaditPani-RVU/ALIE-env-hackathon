@@ -44,14 +44,14 @@ tasks:
     name: easy
     difficulty: easy
     description: "Student with high initial engagement and predictable learning capability."
-    grader: "configs.tasks:grade_episode"
+    grader: "grader:grade_episode"
   - id: medium
     name: medium
     difficulty: medium
     description: "Average student with occasional confusion and lower resilience."
-    grader: "configs.tasks:grade_episode"
+    grader: "grader:grade_episode"
   - id: hard
     name: hard
     difficulty: hard
     description: "Student with severe misconceptions, high fatigue potential, and nonlinear learning curves."
-    grader: "configs.tasks:grade_episode"
+    grader: "grader:grade_episode"
