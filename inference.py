@@ -92,6 +92,14 @@ Respond with valid JSON ONLY, no markdown formatting or codeblocks."""
 def run_task(task_name: str) -> dict:
     """Run a single task episode and return summary info."""
 
+    start_log = {
+        "task_name": task_name,
+        "env_name": "ALIE",
+        "model": MODEL_NAME,
+        "api_base_url": API_BASE_URL,
+    }
+    print(f"[START] {json.dumps(start_log)}")
+
     # ── Reset ────────────────────────────────────────────────────────────────
     try:
         res = httpx.post(f"{ENV_URL}/reset", json={"task_name": task_name}, timeout=30.0)
@@ -99,7 +107,9 @@ def run_task(task_name: str) -> dict:
         obs = res.json()
     except Exception as e:
         print(f"  Error connecting to env for reset: {e}")
-        return {"task_name": task_name, "error": str(e)}
+        result = {"task_name": task_name, "score": 0.001, "total_reward": 0.0, "steps": 0, "error": str(e)}
+        print(f"[END] {json.dumps(result)}")
+        return result
 
     done = False
     total_reward = 0.0
@@ -143,7 +153,7 @@ def run_task(task_name: str) -> dict:
         print(f"[STEP] {json.dumps(step_log)}")
 
     # ── Grab final score ─────────────────────────────────────────────────────
-    final_score = 0.0
+    final_score = None
     try:
         res = httpx.post(f"{ENV_URL}/state", timeout=10.0)
         res.raise_for_status()
@@ -152,38 +162,35 @@ def run_task(task_name: str) -> dict:
     except Exception:
         pass
 
-    return {
+    if final_score is None:
+        final_score = 0.001
+
+    final_score = max(0.001, min(0.999, float(final_score)))
+
+    result = {
         "task_name": task_name,
+        "score": round(final_score, 4),
         "total_reward": round(total_reward, 4),
-        "final_score": round(final_score, 4),
         "steps": step_number,
     }
+    print(f"[END] {json.dumps(result)}")
+    return result
 
 
 def main():
-    # ── [START] structured log ───────────────────────────────────────────────
-    start_log = {
-        "env_name": "ALIE",
-        "tasks": TASKS,
-        "model": MODEL_NAME,
-        "api_base_url": API_BASE_URL,
-    }
-    print(f"[START] {json.dumps(start_log)}")
-
     results = []
     for task_name in TASKS:
         print(f"\n--- Running task: {task_name} ---")
         result = run_task(task_name)
         results.append(result)
         print(f"  Task '{task_name}' => reward={result.get('total_reward', 'N/A')}, "
-              f"score={result.get('final_score', 'N/A')}, steps={result.get('steps', 'N/A')}")
+              f"score={result.get('score', 'N/A')}, steps={result.get('steps', 'N/A')}")
 
-    # ── [END] structured log ─────────────────────────────────────────────────
-    end_log = {
+    summary_log = {
         "results": results,
         "total_tasks": len(TASKS),
     }
-    print(f"\n[END] {json.dumps(end_log)}")
+    print(f"\n[SUMMARY] {json.dumps(summary_log)}")
 
 
 if __name__ == "__main__":
