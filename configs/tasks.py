@@ -47,4 +47,4 @@ def grade_episode(final_state: StudentState, steps_taken: int) -> float:
     safety = max(0.0, 1.0 - final_state.fatigue)
     misconception_penalty = 0.2 * len(final_state.misconceptions)
     final_score = (knowledge_score * 0.6) + (efficiency * 0.2) + (safety * 0.2) - misconception_penalty
-    return max(0.0, min(1.0, final_score))
+    return max(0.001, min(0.999, final_score))
