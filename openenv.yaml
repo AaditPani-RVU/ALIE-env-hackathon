@@ -1,3 +1,9 @@
+spec_version: 1
+name: ALIE
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
 env_name: ALIE
 version: 1.0.0
 description: "Adaptive Learning Intervention Environment (ALIE): A sequential decision-making system simulating a student learning session. The agent selects pedagogical actions to maximize student learning while managing fatigue, engagement, and confidence over time."
@@ -45,13 +51,19 @@ tasks:
     difficulty: easy
     description: "Student with high initial engagement and predictable learning capability."
     grader: "grader:grade_episode"
+    python_module_path: "grader.py"
+    grader_function: "grade_episode"
   - id: medium
     name: medium
     difficulty: medium
     description: "Average student with occasional confusion and lower resilience."
     grader: "grader:grade_episode"
+    python_module_path: "grader.py"
+    grader_function: "grade_episode"
   - id: hard
     name: hard
     difficulty: hard
     description: "Student with severe misconceptions, high fatigue potential, and nonlinear learning curves."
     grader: "grader:grade_episode"
+    python_module_path: "grader.py"
+    grader_function: "grade_episode"
