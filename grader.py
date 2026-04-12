@@ -6,6 +6,14 @@ MIN_SCORE = 0.001
 MAX_SCORE = 0.999
 
 
+def _strict(score: float) -> float:
+    if score <= 0:
+        return 0.05
+    if score >= 1:
+        return 0.99
+    return float(score)
+
+
 def _extract_knowledge_levels(state: Any) -> dict[str, float]:
     if state is None:
         return {}
@@ -92,4 +100,32 @@ def grade_episode(final_state: Any = None, steps_taken: Any = None, **kwargs: An
 
     misconception_penalty = 0.2 * len(_extract_misconceptions(state))
     final_score = (knowledge_score * 0.6) + (efficiency * 0.2) + (safety * 0.2) - misconception_penalty
-    return max(MIN_SCORE, min(MAX_SCORE, float(final_score)))
+    return _strict(float(final_score))
+
+
+def grade_easy(state: Any = None) -> float:
+    try:
+        return _strict(grade_episode(final_state=state, steps_taken=0))
+    except Exception:
+        return 0.05
+
+
+def grade_medium(state: Any = None) -> float:
+    try:
+        return _strict(grade_episode(final_state=state, steps_taken=0))
+    except Exception:
+        return 0.05
+
+
+def grade_hard(state: Any = None) -> float:
+    try:
+        return _strict(grade_episode(final_state=state, steps_taken=0))
+    except Exception:
+        return 0.05
+
+
+def grade_state(state: Any = None) -> float:
+    try:
+        return _strict(grade_medium(state))
+    except Exception:
+        return 0.05
