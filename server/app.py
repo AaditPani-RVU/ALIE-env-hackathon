@@ -6,34 +6,12 @@ from typing import Optional, Dict, Any, List
 from env.models import Action, Observation, StepResult
 from env.alie_env import AlieEnv
 from configs.tasks import get_initial_state
-from grader import grade_episode
+from graders import GRADERS, grade_task
+from tasks import TASKS, TASK_GRADER_PAIRS
 from starlette.staticfiles import StaticFiles
 import os
 
 app = FastAPI(title="ALIE Environment API")
-TASKS = [
-    {
-        "id": "easy",
-        "name": "easy",
-        "difficulty": "easy",
-        "description": "Student with high initial engagement and predictable learning capability.",
-        "grader": {"module": "grader", "function": "grade_episode"},
-    },
-    {
-        "id": "medium",
-        "name": "medium",
-        "difficulty": "medium",
-        "description": "Average student with occasional confusion and lower resilience.",
-        "grader": {"module": "grader", "function": "grade_episode"},
-    },
-    {
-        "id": "hard",
-        "name": "hard",
-        "difficulty": "hard",
-        "description": "Student with severe misconceptions, high fatigue potential, and nonlinear learning curves.",
-        "grader": {"module": "grader", "function": "grade_episode"},
-    },
-]
 
 # We use a global instance for the hackathon/grader purpose.
 # Graders evaluate environments one session at a time locally or isolated via Docker.
@@ -42,6 +20,14 @@ connected_clients: List[WebSocket] = []
 
 class ResetRequest(BaseModel):
     task_name: str = "medium"
+
+
+class GraderRequest(BaseModel):
+    task_id: str
+    state: Optional[Dict[str, Any]] = None
+    student_state: Optional[Dict[str, Any]] = None
+    steps_taken: Optional[int] = 0
+    step_count: Optional[int] = 0
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -91,16 +77,21 @@ async def step_env(action: Action):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/state", response_model=Dict[str, Any])
-async def get_state():
+async def _state_payload() -> Dict[str, Any]:
     global current_env
     if current_env is None:
         raise HTTPException(status_code=400, detail="Environment has not been reset.")
-    
-    # Needs to return unmasked internal state (specifically what AlieEnv builds)
-    # The requirement specifically says state(), we will just return it direct
-    state_dict = current_env.state()
-    return state_dict
+    return current_env.state()
+
+
+@app.post("/state", response_model=Dict[str, Any])
+async def post_state():
+    return await _state_payload()
+
+
+@app.get("/state", response_model=Dict[str, Any])
+async def get_state():
+    return await _state_payload()
 
 @app.get("/")
 def root():
@@ -113,22 +104,27 @@ def health_check():
 
 @app.get("/tasks")
 def list_tasks():
-    return {"tasks": TASKS, "count": len(TASKS)}
+    return {
+        "tasks": TASKS,
+        "count": len(TASKS),
+        "task_grader_pairs": TASK_GRADER_PAIRS,
+    }
 
 
 @app.get("/validate")
 def validate():
     scores = {
-        task["id"]: grade_episode(get_initial_state(task["id"]), 0)
+        task["id"]: grade_task(task["id"])
         for task in TASKS
     }
     checks = {
         "min_3_tasks": len(TASKS) >= 3,
-        "all_tasks_have_graders": all(task.get("grader") for task in TASKS),
+        "all_tasks_have_graders": all(task.get("grader") or task.get("graders") for task in TASKS),
         "scores_strictly_between_0_and_1": all(0.0 < score < 1.0 for score in scores.values()),
         "reset_endpoint": True,
         "step_endpoint": True,
         "state_endpoint": True,
+        "grader_endpoint": True,
     }
     return {
         "valid": all(checks.values()),
@@ -140,7 +136,7 @@ def validate():
 
 
 @app.get("/grade/{task_name}")
-def grade_task(task_name: str):
+def grade_task_endpoint(task_name: str):
     if task_name not in {task["id"] for task in TASKS}:
         raise HTTPException(status_code=404, detail="Unknown task")
 
@@ -148,16 +144,29 @@ def grade_task(task_name: str):
         score = current_env.state().get("score", 0.001)
         source = "live_state"
     else:
-        score = grade_episode(get_initial_state(task_name), 0)
+        score = GRADERS[task_name]()
         source = "initial_state"
 
     score = max(0.001, min(0.999, float(score)))
     return {
         "task_id": task_name,
         "has_grader": True,
-        "grader": {"module": "grader", "function": "grade_episode"},
+        "grader": {"module": "graders", "function": GRADERS[task_name].__name__},
         "score": score,
         "source": source,
+    }
+
+
+@app.post("/grader")
+def grader_endpoint(req: GraderRequest):
+    payload = req.student_state or req.state
+    steps_taken = req.steps_taken or req.step_count or 0
+    score = grade_task(req.task_id, payload, steps_taken, state=payload, student_state=payload, step_count=steps_taken)
+    return {
+        "task_id": req.task_id,
+        "score": max(0.001, min(0.999, float(score))),
+        "grader": {"module": "graders", "function": GRADERS[req.task_id].__name__},
+        "has_grader": True,
     }
 
 def main():

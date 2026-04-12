@@ -3,10 +3,17 @@ name: ALIE
 type: space
 runtime: fastapi
 app: server.app:app
+entry_point: environment:AlieEnv
 port: 7860
 env_name: ALIE
 version: 1.0.0
 description: "Adaptive Learning Intervention Environment (ALIE): A sequential decision-making system simulating a student learning session. The agent selects pedagogical actions to maximize student learning while managing fatigue, engagement, and confidence over time."
+api:
+  reset: "/reset"
+  step: "/step"
+  state: "/state"
+  tasks: "/tasks"
+  grader: "/grader"
 
 action_schema:
   type: object
@@ -47,23 +54,38 @@ observation_schema:
 
 tasks:
   - id: easy
+    task_id: easy
     name: easy
     difficulty: easy
     description: "Student with high initial engagement and predictable learning capability."
-    grader: "grader:grade_episode"
-    python_module_path: "grader.py"
-    grader_function: "grade_episode"
+    grader: "graders:grade_easy"
+    graders: ["graders:grade_easy"]
+    python_module_path: "graders.py"
+    grader_function: "grade_easy"
+    reset_params:
+      task_name: easy
+    reward_range: [0.001, 0.999]
   - id: medium
+    task_id: medium
     name: medium
     difficulty: medium
     description: "Average student with occasional confusion and lower resilience."
-    grader: "grader:grade_episode"
-    python_module_path: "grader.py"
-    grader_function: "grade_episode"
+    grader: "graders:grade_medium"
+    graders: ["graders:grade_medium"]
+    python_module_path: "graders.py"
+    grader_function: "grade_medium"
+    reset_params:
+      task_name: medium
+    reward_range: [0.001, 0.999]
   - id: hard
+    task_id: hard
     name: hard
     difficulty: hard
     description: "Student with severe misconceptions, high fatigue potential, and nonlinear learning curves."
-    grader: "grader:grade_episode"
-    python_module_path: "grader.py"
-    grader_function: "grade_episode"
+    grader: "graders:grade_hard"
+    graders: ["graders:grade_hard"]
+    python_module_path: "graders.py"
+    grader_function: "grade_hard"
+    reset_params:
+      task_name: hard
+    reward_range: [0.001, 0.999]
