@@ -103,28 +103,28 @@ def grade_episode(final_state: Any = None, steps_taken: Any = None, **kwargs: An
     return _strict(float(final_score))
 
 
-def grade_easy(state: Any = None) -> float:
+def grade_easy(state: Any = None, reward: float = 0.0) -> float:
     try:
         return _strict(grade_episode(final_state=state, steps_taken=0))
     except Exception:
         return 0.05
 
 
-def grade_medium(state: Any = None) -> float:
+def grade_medium(state: Any = None, reward: float = 0.0) -> float:
     try:
         return _strict(grade_episode(final_state=state, steps_taken=0))
     except Exception:
         return 0.05
 
 
-def grade_hard(state: Any = None) -> float:
+def grade_hard(state: Any = None, reward: float = 0.0) -> float:
     try:
         return _strict(grade_episode(final_state=state, steps_taken=0))
     except Exception:
         return 0.05
 
 
-def grade_state(state: Any = None) -> float:
+def grade_state(state: Any = None, reward: float = 0.0) -> float:
     try:
         return _strict(grade_medium(state))
     except Exception:
