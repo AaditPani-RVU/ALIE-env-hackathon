@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, List
 from env.models import Action, Observation, StepResult
 from env.alie_env import AlieEnv
 from configs.tasks import get_initial_state
-from graders import GRADERS, grade_task
+from graders import GRADERS, grade_task, get_score
 from tasks import TASKS, TASK_GRADER_PAIRS
 from starlette.staticfiles import StaticFiles
 import os
@@ -113,10 +113,10 @@ def list_tasks():
 
 @app.get("/validate")
 def validate():
-    scores = {
-        task["id"]: grade_task(task["id"])
-        for task in TASKS
-    }
+    scores = {}
+    for task in TASKS:
+        result = grade_task(task["id"])
+        scores[task["id"]] = get_score(result)
     checks = {
         "min_3_tasks": len(TASKS) >= 3,
         "all_tasks_have_graders": all(task.get("grader") or task.get("graders") for task in TASKS),
@@ -144,7 +144,7 @@ def grade_task_endpoint(task_name: str):
         score = current_env.state().get("score", 0.001)
         source = "live_state"
     else:
-        score = GRADERS[task_name]()
+        score = get_score(GRADERS[task_name]())
         source = "initial_state"
 
     score = max(0.001, min(0.999, float(score)))
@@ -161,12 +161,14 @@ def grade_task_endpoint(task_name: str):
 def grader_endpoint(req: GraderRequest):
     payload = req.student_state or req.state
     steps_taken = req.steps_taken or req.step_count or 0
-    score = grade_task(req.task_id, payload, steps_taken, state=payload, student_state=payload, step_count=steps_taken)
+    result = grade_task(req.task_id, payload, steps_taken, state=payload, student_state=payload, step_count=steps_taken)
+    score = get_score(result)
     return {
         "task_id": req.task_id,
-        "score": max(0.001, min(0.999, float(score))),
+        "score": score,
         "grader": {"module": "graders", "function": GRADERS[req.task_id].__name__},
         "has_grader": True,
+        "result": result,
     }
 
 def main():
