@@ -5,9 +5,12 @@ from typing import Any
 from grader import grade_episode
 from configs.tasks import get_initial_state
 
+MIN_SCORE = 0.001
+MAX_SCORE = 0.999
+
 
 def _normalize_score(score: Any) -> float:
-    return max(0.001, min(0.999, float(score)))
+    return max(MIN_SCORE, min(MAX_SCORE, float(score)))
 
 
 def _result(task_id: str, score: Any) -> dict[str, Any]:

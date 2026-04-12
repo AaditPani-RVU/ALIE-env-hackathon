@@ -1,7 +1,11 @@
 from typing import Dict, Any, Tuple
 from env.models import Observation, Action, StepResult, StudentState
 from env.student_sim import StudentSimulator
-from configs.tasks import get_initial_state, grade_episode
+from configs.tasks import get_initial_state
+from grader import grade_episode
+
+MIN_SCORE = 0.001
+MAX_SCORE = 0.999
 
 class AlieEnv:
     def __init__(self, task_name: str = "easy"):
@@ -71,7 +75,7 @@ class AlieEnv:
             "step_count": self.step_count,
             "student_state": self.sim.state.model_dump() if hasattr(self.sim.state, "model_dump") else self.sim.state.dict(),
             "engagement": self.current_engagement,
-            "score": grade_episode(self.sim.state, self.step_count)
+            "score": max(MIN_SCORE, min(MAX_SCORE, grade_episode(self.sim.state, self.step_count)))
         }
 
     def _get_observation(self, response_time: float, current_difficulty: str, current_concept: str) -> Observation:
@@ -87,31 +91,36 @@ class AlieEnv:
 
     def _compute_reward(self, action: Action, is_correct: int, engagement_impact: float, concept_id: str) -> float:
         reward = 0.0
-        
-        if engagement_impact > 0:
-            reward += 0.5
-        elif engagement_impact < -0.1:
-            reward -= 1.0 
-            
+
+        failure_penalized = False
+
         if is_correct == 1:
             reward += 2.0
         elif is_correct == 0:
-            reward -= 1.0 
-            
+            reward -= 1.0
+            failure_penalized = True
+
+        if engagement_impact > 0:
+            reward += 0.5
+        elif engagement_impact < -0.1 and not failure_penalized:
+            reward -= 1.0
+
         if self.sim.state.fatigue > 0.8:
-            reward -= 2.0 
-            
+            reward -= 2.0
+
         if action.action_type == "give_hint" and self.sim.hints_used > 5:
-            reward -= 1.5 
-            
+            reward -= 1.5
+
         current_knowledge = self.sim.state.knowledge_levels.get(concept_id, 0.0)
         if action.action_type == "advance_topic" and current_knowledge < 0.7:
-            reward -= 3.0 
-            
+            reward -= 3.0
+
         if action.action_type == "review_concept":
+            misconception_bonus_applied = False
             if "core_confusion" in self.sim.state.misconceptions:
-                reward += 2.0 
+                reward += 2.0
+                misconception_bonus_applied = True
             if action.duration > 3:
-                reward -= 1.0
-                
-        return reward
+                reward -= 0.5 if misconception_bonus_applied else 1.0
+
+        return max(-5.0, min(5.0, reward))

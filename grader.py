@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+MIN_SCORE = 0.001
+MAX_SCORE = 0.999
+
 
 def _extract_knowledge_levels(state: Any) -> dict[str, float]:
     if state is None:
@@ -89,4 +92,4 @@ def grade_episode(final_state: Any = None, steps_taken: Any = None, **kwargs: An
 
     misconception_penalty = 0.2 * len(_extract_misconceptions(state))
     final_score = (knowledge_score * 0.6) + (efficiency * 0.2) + (safety * 0.2) - misconception_penalty
-    return max(0.001, min(0.999, float(final_score)))
+    return max(MIN_SCORE, min(MAX_SCORE, float(final_score)))
