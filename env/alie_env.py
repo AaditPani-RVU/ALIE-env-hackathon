@@ -90,37 +90,42 @@ class AlieEnv:
         )
 
     def _compute_reward(self, action: Action, is_correct: int, engagement_impact: float, concept_id: str) -> float:
-        reward = 0.0
+        import math
+        raw = 0.0
 
         failure_penalized = False
 
         if is_correct == 1:
-            reward += 2.0
+            raw += 2.0
         elif is_correct == 0:
-            reward -= 1.0
+            raw -= 1.0
             failure_penalized = True
 
         if engagement_impact > 0:
-            reward += 0.5
+            raw += 0.5
         elif engagement_impact < -0.1 and not failure_penalized:
-            reward -= 1.0
+            raw -= 1.0
 
         if self.sim.state.fatigue > 0.8:
-            reward -= 2.0
+            raw -= 2.0
 
         if action.action_type == "give_hint" and self.sim.hints_used > 5:
-            reward -= 1.5
+            raw -= 1.5
 
         current_knowledge = self.sim.state.knowledge_levels.get(concept_id, 0.0)
         if action.action_type == "advance_topic" and current_knowledge < 0.7:
-            reward -= 3.0
+            raw -= 3.0
 
         if action.action_type == "review_concept":
             misconception_bonus_applied = False
             if "core_confusion" in self.sim.state.misconceptions:
-                reward += 2.0
+                raw += 2.0
                 misconception_bonus_applied = True
             if action.duration > 3:
-                reward -= 0.5 if misconception_bonus_applied else 1.0
+                raw -= 0.5 if misconception_bonus_applied else 1.0
 
-        return max(-5.0, min(5.0, reward))
+        # Normalize raw reward to strictly (0, 1) using sigmoid so the
+        # OpenEnv validator never sees a reward outside the valid range.
+        # sigmoid(x * 0.4): raw=-5 → 0.12, raw=0 → 0.5, raw=+5 → 0.88
+        normalized = 1.0 / (1.0 + math.exp(-raw * 0.4))
+        return max(0.05, min(0.95, normalized))
