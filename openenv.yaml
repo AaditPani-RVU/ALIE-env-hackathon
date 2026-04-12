@@ -1,4 +1,5 @@
 name: ALIE
+env_name: ALIE
 version: "1.0.0"
 description: "Adaptive Learning Intervention Environment (ALIE): A sequential decision-making system simulating a student learning session. The agent selects pedagogical actions to maximize student learning while managing fatigue, engagement, and confidence over time."
 environment:

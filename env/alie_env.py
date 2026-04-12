@@ -69,13 +69,23 @@ class AlieEnv:
 
     def state(self) -> Dict[str, Any]:
         if self.sim is None:
-            return {}
+            return {"score": MIN_SCORE}
+        try:
+            raw_score = grade_episode(self.sim.state, self.step_count)
+            score = max(MIN_SCORE, min(MAX_SCORE, float(raw_score)))
+        except Exception:
+            score = MIN_SCORE
+        student_state_dict: Dict[str, Any] = {}
+        try:
+            student_state_dict = self.sim.state.model_dump() if hasattr(self.sim.state, "model_dump") else self.sim.state.dict()
+        except Exception:
+            pass
         return {
             "task_name": self.task_name,
             "step_count": self.step_count,
-            "student_state": self.sim.state.model_dump() if hasattr(self.sim.state, "model_dump") else self.sim.state.dict(),
+            "student_state": student_state_dict,
             "engagement": self.current_engagement,
-            "score": max(MIN_SCORE, min(MAX_SCORE, grade_episode(self.sim.state, self.step_count)))
+            "score": score,
         }
 
     def _get_observation(self, response_time: float, current_difficulty: str, current_concept: str) -> Observation:
